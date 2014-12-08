@@ -1,0 +1,143 @@
+import flash.media.Sound;
+import flash.media.SoundChannel;
+
+var score = 0;
+var framesRemaining = 90;
+var nextSpawn = 100;
+var brokenToys = 0
+var gameOver = false;
+var presentSpeed = 2;
+var spawnSpeed = 1;
+var santaSpeed = 7
+
+var pickup:PickupSound = new PickupSound();//pickup sfx
+var channel:SoundChannel = pickup.play();
+var dropped:DropSound = new DropSound();//drop sfx
+var channel2:SoundChannel = dropped.play();
+
+var bgMusic:BackgroundMusic = new BackgroundMusic();
+var channel3:SoundChannel = bgMusic.play(0,1000);
+var musicTransform:SoundTransform;
+
+muteButton.addEventListener("click", musicOn);
+
+startButton.addEventListener("click", startGame);
+channel.stop();
+channel2.stop();
+
+function musicOn (info)
+{
+	channel3.stop();
+	muteButton.x = 830;
+	unmuteButton.x = 700.5;
+	muteButton.removeEventListener("click", musicOn);
+	unmuteButton.addEventListener("click", musicOff);
+}
+
+function musicOff (info)
+{
+	channel3 = bgMusic.play(0,1000);
+	unmuteButton.x = 830;
+	muteButton.x = 697.1;
+	unmuteButton.removeEventListener("click", musicOff);
+	muteButton.addEventListener("click", musicOn);
+}
+
+/////////////////////Start Button - begins game//////////////
+function startGame(info)
+{
+	startButton.x = 836.65;
+	startButton.removeEventListener("click", startGame);
+	this.addEventListener(Event.ENTER_FRAME, frameEntered);
+	title.x = -273.10;
+}
+
+///////////////////////Every Frame////////////////////////////
+function frameEntered (info)
+{
+	santa.x = santa.x + (mouseX - santa.x)/santaSpeed;
+	presentCounter.text = "Presents: " + score;
+	
+	if (santa.x < 55)//if santa touches left edge of screen
+	{
+		santa.x = 55;
+	}
+	
+	if (santa.x > 750)//if santa touches right edge of screen
+	{
+		santa.x = 750;
+	}
+	
+	nextSpawn = nextSpawn -1;
+	if (nextSpawn < 0)
+	{
+		nextSpawn = 100 - (score*2);
+		trace (nextSpawn);
+		var object = new Present;
+		addChild (object);
+		object.x = Math.random() * 775;
+		object.y = -50;
+		object.addEventListener("enterFrame", fall);
+	}
+	
+	if (gameOver == true)
+	{
+		presentCounter.text = "Game Over!";
+		this.removeEventListener(Event.ENTER_FRAME, frameEntered);
+		restartButton.x = 393.70;
+		restartButton.addEventListener("click", restartGame);
+	}
+}
+
+/////////////////////////////////RESET GAME///////////////////////
+function restartGame (info)
+{
+	restartButton.removeEventListener("click", restartGame);
+	restartButton.x = 836.65;
+	startButton.x = 393.70;
+	startButton.addEventListener ("click", startGame);
+	presentCounter.text = " ";
+	score = 0;
+	framesRemaining = 90;
+	nextSpawn = 100;
+	brokenToys = 0
+	gameOver = false;
+	presentSpeed = 2;
+	spawnSpeed = 1;
+	santaSpeed = 7
+	title.x = 373.85;
+}
+
+///////////////////////Present Falling////////////////////////
+function fall (info)
+{
+	var object = info.target;
+	info.target.y = info.target.y +presentSpeed;
+	
+	if (santa.hitTestPoint (object.x, object.y, true))//if santa catches a presesnt
+		{
+			score = score + 1;
+			pickup.play();
+			object.removeEventListener("enterFrame", fall);
+			removeChild(object);
+			presentSpeed = presentSpeed + 0.5;
+			nextSpawn = nextSpawn - spawnSpeed;
+			if (santaSpeed > 2)
+			{
+				santaSpeed = santaSpeed - 0.5;
+			}
+		}	
+	
+	if (info.target.y > 600)//if present hits the floor
+	{
+		brokenToys = brokenToys + 1;
+		dropped.play();
+		object.removeEventListener("enterFrame", fall);
+		removeChild(object);
+	}
+	
+	if (brokenToys == 3)
+	{
+		gameOver = true;
+	}
+}
